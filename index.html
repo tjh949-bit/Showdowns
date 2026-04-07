@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0d1117" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Showdown" />
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icon.svg" />
+<title>Showdown Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2230;
+    --border: #30363d;
+    --border2: #21262d;
+    --text: #e6edf3;
+    --muted: #7d8590;
+    --accent: #58a6ff;
+    --accent-dim: #1f3a5f;
+    --green: #3fb950;
+    --green-dim: #1a3228;
+    --red: #f85149;
+    --red-dim: #3d1a1a;
+    --amber: #d29922;
+    --amber-dim: #2d2108;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { font-size: 15px; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* HEADER */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(13,17,23,0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border2);
+    padding: env(safe-area-inset-top, 0) 0 0;
+  }
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+  }
+  .logo {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+  .logo span { color: var(--muted); font-weight: 400; }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border2);
+  }
+  .tab {
+    flex: 1;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    padding: 10px 0;
+    text-align: center;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* CONTENT */
+  .pane { display: none; padding: 16px; }
+  .pane.active { display: block; }
+
+  /* FORM */
+  .form-section { margin-bottom: 18px; }
+  .form-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 7px;
+    display: block;
+  }
+  .input-row { display: flex; gap: 8px; }
+  input[type=text], select, textarea {
+    font-family: var(--sans);
+    font-size: 15px;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    width: 100%;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    transition: border-color 0.15s;
+  }
+  input[type=text]:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+  }
+  input::placeholder, textarea::placeholder { color: var(--muted); }
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%237d8590' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+  textarea { resize: vertical; min-height: 68px; line-height: 1.5; }
+
+  /* TAG CHIPS */
+  .chip-group { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    font-size: 12px;
+    padding: 5px 11px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    background: var(--surface);
+    cursor: pointer;
+    transition: all 0.12s;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .chip.sel-leak { background: var(--red-dim); color: var(--red); border-color: var(--red); }
+  .chip.sel-read { background: var(--green-dim); color: var(--green); border-color: var(--green); }
+
+  /* STREET PILLS */
+  .street-group { display: flex; gap: 6px; }
+  .spill {
+    flex: 1;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 0;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    background: var(--surface);
+    cursor: pointer;
+    transition: all 0.12s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .spill.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+
+  /* ADD BUTTON */
+  .btn-add {
+    width: 100%;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 14px;
+    background: var(--accent);
+    color: #0d1117;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-add:active { opacity: 0.85; transform: scale(0.99); }
+
+  /* SUMMARY METRICS */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .metric {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 12px 10px;
+    text-align: center;
+  }
+  .metric-val {
+    font-family: var(--mono);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .metric-lbl {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+    line-height: 1.3;
+  }
+
+  /* FILTER BAR */
+  .filter-bar {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    margin-bottom: 14px;
+    scrollbar-width: none;
+  }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .fchip {
+    flex-shrink: 0;
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    background: var(--surface);
+    cursor: pointer;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .fchip.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+
+  /* HAND CARDS */
+  .hand-card {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hand-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--accent);
+    border-radius: 3px 0 0 3px;
+  }
+  .hand-card.has-leaks::before { background: var(--red); }
+  .hand-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+  .hand-villain { font-size: 15px; font-weight: 600; }
+  .hand-shown {
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--amber);
+    margin-left: 8px;
+  }
+  .hand-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .hand-board { font-size: 12px; color: var(--muted); margin-bottom: 6px; font-family: var(--mono); }
+  .hand-line { font-size: 13px; color: #8b949e; line-height: 1.5; margin-bottom: 8px; }
+  .hand-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
+  .badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+  .badge-leak { background: var(--red-dim); color: var(--red); }
+  .badge-read { background: var(--green-dim); color: var(--green); }
+  .exploit-note {
+    font-size: 12px;
+    color: var(--accent);
+    background: var(--accent-dim);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    line-height: 1.4;
+  }
+  .exploit-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #4a7fa8;
+    margin-bottom: 2px;
+  }
+  .del-btn {
+    font-size: 13px;
+    color: var(--muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    line-height: 1;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .del-btn:active { color: var(--red); }
+
+  /* EMPTY STATE */
+  .empty {
+    text-align: center;
+    padding: 48px 16px;
+    color: var(--muted);
+  }
+  .empty-icon { font-size: 36px; margin-bottom: 12px; opacity: 0.5; }
+  .empty-text { font-size: 14px; line-height: 1.6; }
+
+  /* NOTES TAB */
+  .villain-group { margin-bottom: 20px; }
+  .villain-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border2);
+  }
+  .villain-name { font-size: 15px; font-weight: 600; }
+  .villain-count { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+  .clear-all-btn {
+    font-size: 12px;
+    color: var(--red);
+    background: none;
+    border: 1px solid var(--red-dim);
+    border-radius: var(--radius-sm);
+    padding: 6px 12px;
+    cursor: pointer;
+    font-family: var(--sans);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* INSTALL BANNER */
+  .install-banner {
+    display: none;
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--accent);
+    line-height: 1.5;
+  }
+  .install-banner.visible { display: block; }
+  .install-banner strong { display: block; margin-bottom: 2px; font-weight: 600; }
+  .install-dismiss {
+    float: right;
+    background: none;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* divider */
+  hr { border: none; border-top: 1px solid var(--border2); margin: 18px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="logo">Showdown <span>/ tracker</span></div>
+    <div style="font-size:11px;color:var(--muted);font-family:var(--mono);" id="sessionTime"></div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('log',this)">+ Log Hand</button>
+    <button class="tab" onclick="switchTab('hands',this)">Hands</button>
+    <button class="tab" onclick="switchTab('notes',this)">By Villain</button>
+  </div>
+</div>
+
+<!-- LOG PANE -->
+<div class="pane active" id="pane-log">
+
+  <div id="installBanner" class="install-banner">
+    <button class="install-dismiss" onclick="dismissInstall()">✕</button>
+    <strong>Add to Home Screen</strong>
+    Tap the share icon in Safari, then "Add to Home Screen" to install this as an app.
+  </div>
+
+  <div class="form-section">
+    <label class="form-label">Villain</label>
+    <div class="input-row">
+      <input type="text" id="fName" placeholder="Name or seat #" />
+      <input type="text" id="fHand" placeholder="Hand (e.g. K9o)" style="width:120px;flex-shrink:0;" />
+    </div>
+  </div>
+
+  <div class="form-section">
+    <label class="form-label">Position</label>
+    <select id="fPos">
+      <option value="">— unknown —</option>
+      <option>UTG</option><option>UTG+1</option><option>HJ</option>
+      <option>CO</option><option>BTN</option><option>SB</option><option>BB</option>
+    </select>
+  </div>
+
+  <div class="form-section">
+    <label class="form-label">Street reached</label>
+    <div class="street-group">
+      <button class="spill" onclick="pickStreet('Preflop',this)">Pre</button>
+      <button class="spill" onclick="pickStreet('Flop',this)">Flop</button>
+      <button class="spill" onclick="pickStreet('Turn',this)">Turn</button>
+      <button class="spill active" onclick="pickStreet('River',this)">River</button>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <label class="form-label">Board (optional)</label>
+    <input type="text" id="fBoard" placeholder="e.g. Ah 7c 2d — Ks — 3h" />
+  </div>
+
+  <div class="form-section">
+    <label class="form-label">Action line</label>
+    <textarea id="fLine" placeholder="e.g. 3-bet pre, c-bet flop, checked turn, small bet river..."></textarea>
+  </div>
+
+  <hr />
+
+  <div class="form-section">
+    <label class="form-label">Leaks spotted</label>
+    <div class="chip-group" id="leakChips">
+      <span class="chip" onclick="toggleChip(this,'leak')">Too wide pre</span>
+      <span class="chip" onclick="toggleChip(this,'leak')">Limping range</span>
+      <span class="chip" onclick="toggleChip(this,'leak')">Over-bluffing</span>
+      <span class="chip" onclick="toggleChip(this,'leak')">Under-bluffing</span>
+      <span class="chip" onclick="toggleChip(this,'leak')">Bad sizing</span>
+      <span class="chip" onclick="toggleChip(this,'leak')">Passive post</span>
+      <span class="chip" onclick="toggleChip(this,'leak')">Calling wide</span>
+      <span class="chip" onclick="toggleChip(this,'leak')">Folding too much</span>
+      <span class="chip" onclick="toggleChip(this,'leak')">SD too weak</span>
+      <span class="chip" onclick="toggleChip(this,'leak')">SD too strong</span>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <label class="form-label">Reads / tendencies</label>
+    <div class="chip-group" id="readChips">
+      <span class="chip" onclick="toggleChip(this,'read')">Value heavy</span>
+      <span class="chip" onclick="toggleChip(this,'read')">Tight pre</span>
+      <span class="chip" onclick="toggleChip(this,'read')">Aggressive</span>
+      <span class="chip" onclick="toggleChip(this,'read')">Passive</span>
+      <span class="chip" onclick="toggleChip(this,'read')">Scared money</span>
+      <span class="chip" onclick="toggleChip(this,'read')">Tilt-prone</span>
+      <span class="chip" onclick="toggleChip(this,'read')">Trappy</span>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <label class="form-label">Exploit note</label>
+    <input type="text" id="fExploit" placeholder="e.g. Barrel twice on blanks, thin-value bet river..." />
+  </div>
+
+  <button class="btn-add" onclick="addHand()">+ LOG SHOWDOWN</button>
+  <div style="height:24px;"></div>
+</div>
+
+<!-- HANDS PANE -->
+<div class="pane" id="pane-hands">
+  <div class="metrics" id="metrics"></div>
+  <div class="filter-bar" id="filterBar"></div>
+  <div id="handList"></div>
+</div>
+
+<!-- NOTES PANE -->
+<div class="pane" id="pane-notes">
+  <div style="display:flex;justify-content:flex-end;margin-bottom:14px;">
+    <button class="clear-all-btn" onclick="clearAll()">Clear all data</button>
+  </div>
+  <div id="notesList"></div>
+</div>
+
+<script>
+const STORAGE_KEY = 'showdown_hands_v1';
+let hands = [];
+let activeStreet = 'River';
+let activeFilter = 'all';
+
+function load() {
+  try { hands = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e) { hands = []; }
+}
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(hands));
+}
+
+function pickStreet(s, el) {
+  activeStreet = s;
+  document.querySelectorAll('.spill').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function toggleChip(el, type) {
+  el.classList.toggle(type === 'leak' ? 'sel-leak' : 'sel-read');
+}
+
+function getChips(containerId, cls) {
+  return [...document.querySelectorAll('#' + containerId + ' .chip.' + cls)].map(c => c.textContent.trim());
+}
+
+function addHand() {
+  const name = document.getElementById('fName').value.trim();
+  const hand = document.getElementById('fHand').value.trim();
+  if (!name && !hand) { alert('Enter a villain name or hand shown.'); return; }
+
+  const entry = {
+    id: Date.now(),
+    name: name || 'Unknown',
+    hand: hand || '?',
+    pos: document.getElementById('fPos').value,
+    board: document.getElementById('fBoard').value.trim(),
+    street: activeStreet,
+    line: document.getElementById('fLine').value.trim(),
+    leaks: getChips('leakChips', 'sel-leak'),
+    reads: getChips('readChips', 'sel-read'),
+    exploit: document.getElementById('fExploit').value.trim(),
+    ts: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+  };
+
+  hands.unshift(entry);
+  save();
+  resetForm();
+  updateAll();
+  switchTab('hands', document.querySelectorAll('.tab')[1]);
+}
+
+function resetForm() {
+  ['fName','fHand','fBoard','fLine','fExploit'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('fPos').value = '';
+  document.querySelectorAll('.chip').forEach(c => c.className = 'chip');
+  document.querySelectorAll('.spill').forEach(b => b.classList.remove('active'));
+  document.querySelector('.spill:last-child').classList.add('active');
+  activeStreet = 'River';
+}
+
+function deleteHand(id) {
+  if (!confirm('Remove this hand?')) return;
+  hands = hands.filter(h => h.id !== id);
+  save();
+  updateAll();
+}
+
+function clearAll() {
+  if (!confirm('Clear all logged hands? This cannot be undone.')) return;
+  hands = [];
+  save();
+  updateAll();
+}
+
+function setFilter(val, el) {
+  activeFilter = val;
+  document.querySelectorAll('.fchip').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderHands();
+}
+
+function switchTab(id, el) {
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('pane-' + id).classList.add('active');
+  el.classList.add('active');
+  if (id === 'hands') renderHands();
+  if (id === 'notes') renderNotes();
+}
+
+function updateAll() {
+  renderMetrics();
+  renderFilterBar();
+  renderHands();
+  renderNotes();
+}
+
+function renderMetrics() {
+  const villains = new Set(hands.map(h => h.name)).size;
+  const leaks = hands.reduce((a,h) => a + h.leaks.length, 0);
+  document.getElementById('metrics').innerHTML = `
+    <div class="metric"><div class="metric-val">${hands.length}</div><div class="metric-lbl">Showdowns</div></div>
+    <div class="metric"><div class="metric-val">${villains}</div><div class="metric-lbl">Villains</div></div>
+    <div class="metric"><div class="metric-val">${leaks}</div><div class="metric-lbl">Leaks found</div></div>
+  `;
+}
+
+function renderFilterBar() {
+  const names = [...new Set(hands.map(h => h.name))];
+  const bar = document.getElementById('filterBar');
+  bar.innerHTML = `<button class="fchip ${activeFilter==='all'?'active':''}" onclick="setFilter('all',this)">All</button>`;
+  names.forEach(n => {
+    const a = activeFilter === n ? 'active' : '';
+    bar.innerHTML += `<button class="fchip ${a}" onclick="setFilter(${JSON.stringify(n)},this)">${n}</button>`;
+  });
+}
+
+function renderHands() {
+  renderMetrics();
+  renderFilterBar();
+  const list = document.getElementById('handList');
+  const filtered = activeFilter === 'all' ? hands : hands.filter(h => h.name === activeFilter);
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">♠</div><div class="empty-text">No showdowns logged yet.<br/>Head to "+ Log Hand" to add your first.</div></div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(h => `
+    <div class="hand-card ${h.leaks.length ? 'has-leaks' : ''}">
+      <div class="hand-top">
+        <div>
+          <span class="hand-villain">${esc(h.name)}</span>
+          <span class="hand-shown">${esc(h.hand)}</span>
+          ${h.pos ? `<span style="font-size:11px;color:var(--muted);margin-left:4px;">${h.pos}</span>` : ''}
+          <div class="hand-meta">${h.street} · ${h.ts}</div>
+        </div>
+        <button class="del-btn" onclick="deleteHand(${h.id})">✕</button>
+      </div>
+      ${h.board ? `<div class="hand-board">${esc(h.board)}</div>` : ''}
+      ${h.line ? `<div class="hand-line">${esc(h.line)}</div>` : ''}
+      ${(h.leaks.length || h.reads.length) ? `
+        <div class="hand-badges">
+          ${h.leaks.map(l => `<span class="badge badge-leak">${esc(l)}</span>`).join('')}
+          ${h.reads.map(r => `<span class="badge badge-read">${esc(r)}</span>`).join('')}
+        </div>` : ''}
+      ${h.exploit ? `<div class="exploit-note"><div class="exploit-label">Exploit</div>${esc(h.exploit)}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function renderNotes() {
+  const list = document.getElementById('notesList');
+  if (!hands.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">♣</div><div class="empty-text">No hands logged yet.</div></div>`;
+    return;
+  }
+  const byVillain = {};
+  hands.forEach(h => { if (!byVillain[h.name]) byVillain[h.name] = []; byVillain[h.name].push(h); });
+
+  list.innerHTML = Object.entries(byVillain).map(([name, hs]) => {
+    const allLeaks = [...new Set(hs.flatMap(h => h.leaks))];
+    const allReads = [...new Set(hs.flatMap(h => h.reads))];
+    const exploits = hs.filter(h => h.exploit).map(h => h.exploit);
+    return `
+      <div class="villain-group">
+        <div class="villain-header">
+          <div class="villain-name">${esc(name)}</div>
+          <div class="villain-count">${hs.length} hand${hs.length>1?'s':''}</div>
+        </div>
+        ${allLeaks.length ? `<div style="margin-bottom:8px;"><div style="font-size:11px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.07em;font-weight:600;">Leaks</div><div class="hand-badges">${allLeaks.map(l=>`<span class="badge badge-leak">${esc(l)}</span>`).join('')}</div></div>` : ''}
+        ${allReads.length ? `<div style="margin-bottom:8px;"><div style="font-size:11px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.07em;font-weight:600;">Reads</div><div class="hand-badges">${allReads.map(r=>`<span class="badge badge-read">${esc(r)}</span>`).join('')}</div></div>` : ''}
+        ${exploits.length ? `<div><div style="font-size:11px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.07em;font-weight:600;">Exploits</div>${exploits.map(e=>`<div class="exploit-note" style="margin-bottom:5px;">${esc(e)}</div>`).join('')}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function updateClock() {
+  const now = new Date();
+  const t = now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  document.getElementById('sessionTime').textContent = t;
+}
+
+function dismissInstall() {
+  document.getElementById('installBanner').classList.remove('visible');
+  localStorage.setItem('install_dismissed','1');
+}
+
+function checkInstallBanner() {
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone === true;
+  const dismissed = localStorage.getItem('install_dismissed');
+  if (isIOS && !isStandalone && !dismissed) {
+    document.getElementById('installBanner').classList.add('visible');
+  }
+}
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+load();
+updateAll();
+updateClock();
+setInterval(updateClock, 30000);
+checkInstallBanner();
+</script>
+</body>
+</html>
